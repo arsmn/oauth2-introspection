@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -59,6 +58,6 @@ func (p *Provider) Get(key string) ([]byte, error) {
 	return val, nil
 }
 
-func (p *Provider) Set(key string, data []byte, expiration time.Duration) error {
-	return p.db.Set(context.Background(), key, data, expiration).Err()
+func (p *Provider) Set(key string, data []byte) error {
+	return p.db.Set(context.Background(), key, data, p.config.Expiration).Err()
 }

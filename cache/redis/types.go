@@ -9,6 +9,9 @@ import (
 
 // Config provider settings
 type Config struct {
+	// Expiration ttl
+	Expiration time.Duration
+
 	// Key prefix
 	KeyPrefix string
 

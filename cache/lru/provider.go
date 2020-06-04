@@ -1,8 +1,10 @@
-package memory
+package lru
 
 import (
 	"sync"
 	"time"
+
+	lru "github.com/hashicorp/golang-lru"
 )
 
 var itemPool = &sync.Pool{
@@ -24,23 +26,28 @@ func releaseItem(item *item) {
 }
 
 func New(cfg Config) (*Provider, error) {
+	db, err := lru.New(cfg.Size)
+	if err != nil {
+		return nil, err
+	}
+
 	p := &Provider{
 		config: cfg,
-		db:     new(dict),
+		db:     db,
 	}
 
 	return p, nil
 }
 
 func (p *Provider) Get(key string) ([]byte, error) {
-	val := p.db.Get(key)
-	if val == nil {
+	val, ok := p.db.Get(key)
+	if !ok {
 		return nil, nil
 	}
 
 	item := val.(*item)
 	if item.isExpired() {
-		p.db.Del(key)
+		p.db.Remove(key)
 		releaseItem(item)
 		return nil, nil
 	}
@@ -54,7 +61,6 @@ func (p *Provider) Set(key string, data []byte) error {
 	item.expiration = p.config.Expiration
 	item.storeTime = time.Now().UTC()
 
-	p.db.Set(key, item)
-
+	p.db.Add(key, item)
 	return nil
 }

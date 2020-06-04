@@ -1,24 +1,19 @@
-package memory
+package lru
 
 import (
 	"time"
 
-	"github.com/savsgio/dictpool"
+	lru "github.com/hashicorp/golang-lru"
 )
 
-// Config provider settings
 type Config struct {
+	Size       int
 	Expiration time.Duration
 }
 
-// Provider backend manager
 type Provider struct {
 	config Config
-	db     *dict
-}
-
-type dict struct {
-	dictpool.Dict
+	db     *lru.Cache
 }
 
 type item struct {
