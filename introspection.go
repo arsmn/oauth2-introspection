@@ -11,40 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Config holds the configuration for the middleware
-type Config struct {
-	// Authority is OAuth server address.
-	// Required. Default: ""
-	Authority string
-
-	// ApiName is name of the API resource used for
-	// authentication against introspection endpoint
-	// Optional. Default: ""
-	APIName string
-
-	// ApiSecret used for authentication against introspection endpoint
-	// Optional. Default: ""
-	APISecret string
-
-	// Audience defines required audience for authorization.
-	// Optional. Default: nil
-	Audience []string
-
-	// Issuers defines required issuers for authorization.
-	// Optional. Default: nil
-	Issuers []string
-
-	// IntrospectionRequestHeaders is list of headers
-	// that is send to introspection endpoint.
-	// Optional. Default: nil
-	IntrospectionRequestHeaders map[string]string
-}
-
-type OAuth2Introspection struct {
-	c      Config
-	client *http.Client
-}
-
 func New(config ...Config) *OAuth2Introspection {
 
 	var cfg Config
@@ -64,18 +30,6 @@ func New(config ...Config) *OAuth2Introspection {
 		c:      cfg,
 		client: client,
 	}
-}
-
-type OAuth2IntrospectionResult struct {
-	Active    bool                   `json:"active"`
-	Extra     map[string]interface{} `json:"ext"`
-	Subject   string                 `json:"sub,omitempty"`
-	Username  string                 `json:"username"`
-	Audience  []string               `json:"aud"`
-	TokenType string                 `json:"token_type"`
-	Issuer    string                 `json:"iss"`
-	ClientID  string                 `json:"client_id,omitempty"`
-	Scope     string                 `json:"scope,omitempty"`
 }
 
 func (o *OAuth2Introspection) Authenticate(token string) (*OAuth2IntrospectionResult, error) {
@@ -118,25 +72,16 @@ func (o *OAuth2Introspection) Authenticate(token string) (*OAuth2IntrospectionRe
 	}
 
 	for _, audience := range o.c.Audience {
-		if !contains(i.Audience, audience) {
+		if !containsSring(i.Audience, audience) {
 			return nil, errors.WithStack(ErrForbidden)
 		}
 	}
 
 	if len(o.c.Issuers) > 0 {
-		if !contains(o.c.Issuers, i.Issuer) {
+		if !containsSring(o.c.Issuers, i.Issuer) {
 			return nil, errors.WithStack(ErrForbidden)
 		}
 	}
 
 	return &i, nil
-}
-
-func contains(s []string, v string) bool {
-	for _, vv := range s {
-		if vv == v {
-			return true
-		}
-	}
-	return false
 }
