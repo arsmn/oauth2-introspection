@@ -1,6 +1,9 @@
 package introspection
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 // Config holds the configuration for the middleware
 type Config struct {
@@ -46,4 +49,13 @@ type OAuth2IntrospectionResult struct {
 	Issuer    string                 `json:"iss"`
 	ClientID  string                 `json:"client_id,omitempty"`
 	Scope     string                 `json:"scope,omitempty"`
+}
+
+// Cache is a shared store for token caching
+type Cache interface {
+	// Get looks up a key's value from the cache.
+	Get(ctx context.Context, key string) (value interface{}, ok bool)
+
+	// Set adds a value to the cache.
+	Set(ctx context.Context, key string, value interface{})
 }
