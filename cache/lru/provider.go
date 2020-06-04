@@ -1,6 +1,7 @@
 package lru
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -28,7 +29,7 @@ func releaseItem(item *item) {
 func New(cfg Config) (*Provider, error) {
 	db, err := lru.New(cfg.Size)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("LRU initialization error: %v", err)
 	}
 
 	p := &Provider{

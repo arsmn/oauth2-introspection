@@ -32,11 +32,43 @@ func New(config ...Config) *OAuth2Introspection {
 	}
 }
 
-func (o *OAuth2Introspection) Authenticate(token string) (*OAuth2IntrospectionResult, error) {
+func (o *OAuth2Introspection) Introspect(token string) (*OAuth2IntrospectionResult, error) {
 
 	if token == "" {
 		return nil, errors.WithStack(ErrMalformedToken)
 	}
+
+	var result *OAuth2IntrospectionResult
+	var isCacheEnabled = o.c.CacheProvider != nil
+
+	if isCacheEnabled {
+		res, err := o.getCache(token)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		result = res
+	}
+
+	if result == nil {
+		res, err := o.sendRequest(token)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if isCacheEnabled {
+			err := o.setCache(token, result)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		result = res
+	}
+
+	return result, nil
+}
+
+func (o *OAuth2Introspection) sendRequest(token string) (*OAuth2IntrospectionResult, error) {
 	body := url.Values{"token": {token}}
 	introspectReq, err := http.NewRequest(http.MethodPost, o.c.Authority, strings.NewReader(body.Encode()))
 	if err != nil {
@@ -84,4 +116,31 @@ func (o *OAuth2Introspection) Authenticate(token string) (*OAuth2IntrospectionRe
 	}
 
 	return &i, nil
+}
+
+func (o *OAuth2Introspection) getCache(token string) (*OAuth2IntrospectionResult, error) {
+	val, err := o.c.CacheProvider.Get(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(val) == 0 {
+		return nil, nil
+	}
+
+	var i OAuth2IntrospectionResult
+	if err := json.Unmarshal(val, &i); err != nil {
+		return nil, err
+	}
+
+	return &i, nil
+}
+
+func (o *OAuth2Introspection) setCache(token string, result *OAuth2IntrospectionResult) error {
+	data, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+
+	return o.c.CacheProvider.Set(token, data)
 }

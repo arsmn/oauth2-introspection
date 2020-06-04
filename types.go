@@ -31,6 +31,11 @@ type Config struct {
 	// that is send to introspection endpoint.
 	// Optional. Default: nil
 	IntrospectionRequestHeaders map[string]string
+
+	// CacheProvider used to avoid roundtrip to the
+	// introspection endpoint for each incoming request.
+	// Optional. Default: nil
+	CacheProvider Cache
 }
 
 type OAuth2Introspection struct {
