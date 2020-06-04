@@ -1,8 +1,8 @@
 package introspection
 
 import (
-	"context"
 	"net/http"
+	"time"
 )
 
 // Config holds the configuration for the middleware
@@ -53,9 +53,6 @@ type OAuth2IntrospectionResult struct {
 
 // Cache is a shared store for token caching
 type Cache interface {
-	// Get looks up a key's value from the cache.
-	Get(ctx context.Context, key string) (value interface{}, ok bool)
-
-	// Set adds a value to the cache.
-	Set(ctx context.Context, key string, value interface{})
+	Get(key string) ([]byte, error)
+	Set(key string, data []byte, expiration time.Duration) error
 }

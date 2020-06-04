@@ -1,8 +1,27 @@
 package memory
 
 import (
-	"context"
+	"sync"
+	"time"
 )
+
+var itemPool = &sync.Pool{
+	New: func() interface{} {
+		return new(item)
+	},
+}
+
+func acquireItem() *item {
+	return itemPool.Get().(*item)
+}
+
+func releaseItem(item *item) {
+	item.data = item.data[:0]
+	item.lastActiveTime = 0
+	item.expiration = 0
+
+	itemPool.Put(item)
+}
 
 func New(cfg Config) (*Provider, error) {
 	p := &Provider{
@@ -13,14 +32,23 @@ func New(cfg Config) (*Provider, error) {
 	return p, nil
 }
 
-func (p *Provider) Get(ctx context.Context, key string) (value interface{}, ok bool) {
+func (p *Provider) Get(key string) ([]byte, error) {
 	val := p.db.Get(key)
 	if val == nil {
-		return nil, false
+		return nil, nil
 	}
-	return val, true
+
+	item := val.(*item)
+	return item.data, nil
 }
 
-func (p *Provider) Set(ctx context.Context, key string, value interface{}) {
-	p.db.Set(key, value)
+func (p *Provider) Set(key string, data []byte, expiration time.Duration) error {
+	item := acquireItem()
+	item.data = data
+	item.lastActiveTime = time.Now().UnixNano()
+	item.expiration = expiration
+
+	p.db.Set(key, item)
+
+	return nil
 }

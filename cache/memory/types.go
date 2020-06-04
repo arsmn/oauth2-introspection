@@ -1,6 +1,8 @@
 package memory
 
 import (
+	"time"
+
 	"github.com/savsgio/dictpool"
 )
 
@@ -15,4 +17,10 @@ type Provider struct {
 
 type dict struct {
 	dictpool.Dict
+}
+
+type item struct {
+	data           []byte
+	lastActiveTime int64
+	expiration     time.Duration
 }
